@@ -72,6 +72,12 @@ export default function OrderConfirmationScreen() {
               {ORDER_TYPE_LABEL[lastOrder.orderType]}
             </Text>
           </View>
+          <View style={styles.summaryRow}>
+            <Text style={{ fontFamily: fontFamily.bodySemiBold, fontSize: 13, color: colors.textMuted }}>PAYMENT</Text>
+            <Text style={{ fontFamily: fontFamily.bodySemiBold, fontSize: 13, color: colors.text }}>
+              {lastOrder.paymentMethodLabel}
+            </Text>
+          </View>
           {lastOrder.notes ? (
             <View style={styles.summaryRow}>
               <Text style={{ fontFamily: fontFamily.bodySemiBold, fontSize: 13, color: colors.textMuted }}>NOTES</Text>

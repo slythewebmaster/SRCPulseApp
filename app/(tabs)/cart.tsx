@@ -8,6 +8,7 @@ import { useCart } from "@/context/CartContext";
 import { Button } from "@/components/ui/Button";
 import { QuantityStepper } from "@/components/ui/QuantityStepper";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ResponsiveContainer } from "@/components/ui/ResponsiveContainer";
 import { currency } from "@/data/menu";
 
 export default function CartScreen() {
@@ -36,6 +37,7 @@ export default function CartScreen() {
       ) : (
         <>
           <ScrollView contentContainerStyle={{ paddingBottom: 20 }} showsVerticalScrollIndicator={false}>
+          <ResponsiveContainer maxWidth={700}>
             {lines.map((line) => (
               <View
                 key={`${line.itemId}-${line.notes ?? ""}`}
@@ -82,20 +84,23 @@ export default function CartScreen() {
                 </View>
               </View>
             ))}
+          </ResponsiveContainer>
           </ScrollView>
 
           <View style={[styles.summary, { backgroundColor: colors.surface, borderTopColor: colors.border, paddingBottom: insets.bottom + 16 }]}>
-            <View style={styles.summaryRow}>
-              <Text style={{ fontFamily: fontFamily.body, fontSize: 14, color: colors.textMuted }}>Subtotal</Text>
-              <Text style={{ fontFamily: fontFamily.bodySemiBold, fontSize: 14, color: colors.text }}>
-                {currency}
-                {subtotal.toFixed(2)}
+            <ResponsiveContainer maxWidth={700}>
+              <View style={styles.summaryRow}>
+                <Text style={{ fontFamily: fontFamily.body, fontSize: 14, color: colors.textMuted }}>Subtotal</Text>
+                <Text style={{ fontFamily: fontFamily.bodySemiBold, fontSize: 14, color: colors.text }}>
+                  {currency}
+                  {subtotal.toFixed(2)}
+                </Text>
+              </View>
+              <Text style={{ fontFamily: fontFamily.body, fontSize: 12, color: colors.textMuted, marginBottom: 12 }}>
+                Service fee and delivery details are confirmed at checkout.
               </Text>
-            </View>
-            <Text style={{ fontFamily: fontFamily.body, fontSize: 12, color: colors.textMuted, marginBottom: 12 }}>
-              Service fee and delivery details are confirmed at checkout.
-            </Text>
-            <Button label="Proceed to checkout" size="lg" fullWidth onPress={() => router.push("/checkout")} />
+              <Button label="Proceed to checkout" size="lg" fullWidth onPress={() => router.push("/checkout")} />
+            </ResponsiveContainer>
           </View>
         </>
       )}

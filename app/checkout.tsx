@@ -5,10 +5,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/useTheme";
 import { useCart, type OrderType } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
+import { usePaymentMethods } from "@/context/PaymentMethodsContext";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { FormField } from "@/components/ui/FormField";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ResponsiveContainer } from "@/components/ui/ResponsiveContainer";
 import { currency } from "@/data/menu";
 
 const ORDER_TYPES: Array<{ id: OrderType; label: string; icon: keyof typeof Ionicons.glyphMap }> = [
@@ -20,16 +23,24 @@ const ORDER_TYPES: Array<{ id: OrderType; label: string; icon: keyof typeof Ioni
 export default function CheckoutScreen() {
   const { colors, spacing, radii, shadow, fontFamily, type } = useTheme();
   const { lines, subtotal, placeOrder } = useCart();
+  const { user } = useAuth();
+  const { methods } = usePaymentMethods();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
   const [orderType, setOrderType] = useState<OrderType>("dine-in");
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
+  const [name, setName] = useState(user?.name ?? "");
+  const [phone, setPhone] = useState(user?.phone ?? "");
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
+  const [paymentMethodId, setPaymentMethodId] = useState<string>("cash");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+
+  const paymentOptions = [
+    { id: "cash", label: orderType === "delivery" ? "Cash on delivery" : "Cash on pickup/at table" },
+    ...methods.map((m) => ({ id: m.id, label: m.label })),
+  ];
 
   const serviceFee = useMemo(() => Math.round(subtotal * 0.05 * 100) / 100, [subtotal]);
   const total = useMemo(() => Math.round((subtotal + serviceFee) * 100) / 100, [subtotal, serviceFee]);
@@ -63,8 +74,15 @@ export default function CheckoutScreen() {
     if (!validate()) return;
     setSubmitting(true);
     const combinedNotes = orderType === "delivery" && address.trim() ? `Deliver to: ${address.trim()}${notes ? ` — ${notes}` : ""}` : notes || undefined;
+    const paymentMethodLabel = paymentOptions.find((option) => option.id === paymentMethodId)?.label ?? "Cash";
     setTimeout(() => {
-      placeOrder({ orderType, customerName: name.trim(), contactPhone: phone.trim(), notes: combinedNotes });
+      placeOrder({
+        orderType,
+        customerName: name.trim(),
+        contactPhone: phone.trim(),
+        notes: combinedNotes,
+        paymentMethodLabel,
+      });
       setSubmitting(false);
       router.replace("/order-confirmation");
     }, 600);
@@ -75,6 +93,7 @@ export default function CheckoutScreen() {
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         <ScreenHeader title="Checkout" />
         <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: 20 }} showsVerticalScrollIndicator={false}>
+          <ResponsiveContainer maxWidth={640}>
           <Text style={[type.h3, { color: colors.text, marginBottom: 10 }]}>How would you like your order?</Text>
           <View style={styles.orderTypeRow}>
             {ORDER_TYPES.map((option) => {
@@ -152,6 +171,52 @@ export default function CheckoutScreen() {
             />
           </View>
 
+          <Text style={[type.h3, { color: colors.text, marginTop: spacing.md, marginBottom: 10 }]}>Payment method</Text>
+          <View style={{ gap: 8 }}>
+            {paymentOptions.map((option) => {
+              const active = paymentMethodId === option.id;
+              return (
+                <Pressable
+                  key={option.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Pay with ${option.label}`}
+                  accessibilityState={{ selected: active }}
+                  onPress={() => setPaymentMethodId(option.id)}
+                  style={[
+                    styles.paymentRow,
+                    shadow.card,
+                    { backgroundColor: colors.surface, borderRadius: radii.md, borderColor: active ? colors.primary : "transparent" },
+                  ]}
+                >
+                  <Ionicons
+                    name={option.id === "cash" ? "cash-outline" : option.id.startsWith("card") ? "card-outline" : "phone-portrait-outline"}
+                    size={18}
+                    color={colors.text}
+                  />
+                  <Text style={{ fontFamily: fontFamily.bodyMedium, fontSize: 14, color: colors.text, flex: 1 }} numberOfLines={1}>
+                    {option.label}
+                  </Text>
+                  <Ionicons
+                    name={active ? "radio-button-on" : "radio-button-off"}
+                    size={20}
+                    color={active ? colors.primary : colors.textMuted}
+                  />
+                </Pressable>
+              );
+            })}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Add a new payment method"
+              onPress={() => router.push("/payment-methods")}
+              style={styles.addPaymentLink}
+            >
+              <Ionicons name="add-circle-outline" size={16} color={colors.primary} />
+              <Text style={{ fontFamily: fontFamily.bodySemiBold, fontSize: 13, color: colors.primary }}>
+                Add a card or mobile money number
+              </Text>
+            </Pressable>
+          </View>
+
           <View style={[styles.summaryCard, shadow.card, { backgroundColor: colors.surface, borderRadius: radii.lg }]}>
             <Text style={{ fontFamily: fontFamily.bodySemiBold, fontSize: 14, color: colors.text, marginBottom: 10 }}>
               Order summary ({lines.reduce((sum, l) => sum + l.quantity, 0)} items)
@@ -192,12 +257,15 @@ export default function CheckoutScreen() {
           </View>
 
           <Text style={{ fontFamily: fontFamily.body, fontSize: 12, color: colors.textMuted, marginTop: 12, textAlign: "center" }}>
-            This is a demo checkout — no payment is processed. Pay in person or via cash/card {orderType === "delivery" ? "on delivery" : "at the counter"}.
+            This is a demo checkout — no payment is actually processed.
           </Text>
+          </ResponsiveContainer>
         </ScrollView>
 
         <View style={[styles.footer, { backgroundColor: colors.surface, borderTopColor: colors.border, paddingBottom: insets.bottom + 12 }]}>
-          <Button label={`Place order — ${currency}${total.toFixed(2)}`} onPress={handleSubmit} size="lg" fullWidth loading={submitting} />
+          <ResponsiveContainer maxWidth={640}>
+            <Button label={`Place order — ${currency}${total.toFixed(2)}`} onPress={handleSubmit} size="lg" fullWidth loading={submitting} />
+          </ResponsiveContainer>
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -213,6 +281,20 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     paddingVertical: 14,
+  },
+  paymentRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    padding: 14,
+    borderWidth: 1.5,
+  },
+  addPaymentLink: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 10,
+    alignSelf: "flex-start",
   },
   summaryCard: {
     padding: 16,

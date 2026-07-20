@@ -3,6 +3,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { MenuItem } from "@/data/menu";
 
 const STORAGE_KEY = "bosphorus.cart.lines.v1";
+const HISTORY_KEY = "bosphorus.order-history.v1";
+const MAX_HISTORY = 20;
 
 export type CartLine = {
   itemId: string;
@@ -26,6 +28,7 @@ export type PlacedOrder = {
   customerName: string;
   contactPhone: string;
   notes?: string;
+  paymentMethodLabel: string;
 };
 
 type CheckoutDetails = {
@@ -33,6 +36,7 @@ type CheckoutDetails = {
   customerName: string;
   contactPhone: string;
   notes?: string;
+  paymentMethodLabel: string;
 };
 
 type CartContextValue = {
@@ -44,6 +48,7 @@ type CartContextValue = {
   removeItem: (itemId: string) => void;
   clearCart: () => void;
   lastOrder: PlacedOrder | null;
+  orderHistory: PlacedOrder[];
   placeOrder: (details: CheckoutDetails) => PlacedOrder;
 };
 
@@ -59,7 +64,9 @@ function generateOrderNumber() {
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [lines, setLines] = useState<CartLine[]>([]);
   const [lastOrder, setLastOrder] = useState<PlacedOrder | null>(null);
-  const hasHydrated = useRef(false);
+  const [orderHistory, setOrderHistory] = useState<PlacedOrder[]>([]);
+  const hasHydratedCart = useRef(false);
+  const hasHydratedHistory = useRef(false);
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY)
@@ -71,14 +78,34 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       })
       .catch(() => {})
       .finally(() => {
-        hasHydrated.current = true;
+        hasHydratedCart.current = true;
+      });
+
+    AsyncStorage.getItem(HISTORY_KEY)
+      .then((stored) => {
+        if (stored) {
+          const parsed = JSON.parse(stored) as PlacedOrder[];
+          if (Array.isArray(parsed)) {
+            setOrderHistory(parsed);
+            if (parsed.length > 0) setLastOrder(parsed[0]);
+          }
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        hasHydratedHistory.current = true;
       });
   }, []);
 
   useEffect(() => {
-    if (!hasHydrated.current) return;
+    if (!hasHydratedCart.current) return;
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(lines)).catch(() => {});
   }, [lines]);
+
+  useEffect(() => {
+    if (!hasHydratedHistory.current) return;
+    AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(orderHistory)).catch(() => {});
+  }, [orderHistory]);
 
   const addItem = useCallback<CartContextValue["addItem"]>((item, quantity = 1, notes) => {
     setLines((prev) => {
@@ -131,8 +158,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         customerName: details.customerName,
         contactPhone: details.contactPhone,
         notes: details.notes,
+        paymentMethodLabel: details.paymentMethodLabel,
       };
       setLastOrder(order);
+      setOrderHistory((prev) => [order, ...prev].slice(0, MAX_HISTORY));
       setLines([]);
       return order;
     },
@@ -148,6 +177,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     removeItem,
     clearCart,
     lastOrder,
+    orderHistory,
     placeOrder,
   };
 

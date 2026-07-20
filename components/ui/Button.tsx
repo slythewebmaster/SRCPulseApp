@@ -17,6 +17,8 @@ type ButtonProps = {
   fullWidth?: boolean;
   style?: ViewStyle;
   accessibilityLabel?: string;
+  /** Override the default variant text/border color — e.g. white outline text on a dark hero image. */
+  textColor?: string;
 };
 
 export function Button({
@@ -31,6 +33,7 @@ export function Button({
   fullWidth,
   style,
   accessibilityLabel,
+  textColor,
 }: ButtonProps) {
   const { colors, radii, fontFamily } = useTheme();
   const isDisabled = disabled || loading;
@@ -47,6 +50,8 @@ export function Button({
     outline: colors.primary,
     ghost: colors.primary,
   };
+  const resolvedTextColor = textColor ?? textColors[variant];
+  const borderColor = variant === "outline" ? textColor ?? colors.primary : colors.primary;
 
   return (
     <Pressable
@@ -63,7 +68,7 @@ export function Button({
           paddingVertical: size === "lg" ? 16 : 12,
           paddingHorizontal: size === "lg" ? 28 : 20,
           borderWidth: variant === "outline" ? 1.5 : 0,
-          borderColor: colors.primary,
+          borderColor,
           opacity: isDisabled ? 0.5 : pressed ? 0.85 : 1,
           width: fullWidth ? "100%" : undefined,
         },
@@ -72,7 +77,7 @@ export function Button({
     >
       <View style={styles.content}>
         {loading ? (
-          <ActivityIndicator size="small" color={textColors[variant]} />
+          <ActivityIndicator size="small" color={resolvedTextColor} />
         ) : (
           <>
             {icon && iconPosition === "left" ? icon : null}
@@ -80,7 +85,7 @@ export function Button({
               style={{
                 fontFamily: fontFamily.bodySemiBold,
                 fontSize: size === "lg" ? 16 : 14,
-                color: textColors[variant],
+                color: resolvedTextColor,
               }}
               numberOfLines={1}
             >

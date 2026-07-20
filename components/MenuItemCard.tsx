@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View, type ViewStyle } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
@@ -10,10 +10,13 @@ type MenuItemCardProps = {
   item: MenuItem;
   onPress: () => void;
   onAdd: () => void;
+  layout?: "row" | "grid";
+  style?: ViewStyle;
 };
 
-export function MenuItemCard({ item, onPress, onAdd }: MenuItemCardProps) {
+export function MenuItemCard({ item, onPress, onAdd, layout = "row", style }: MenuItemCardProps) {
   const { colors, radii, spacing, shadow, fontFamily, type } = useTheme();
+  const isGrid = layout === "grid";
 
   return (
     <View
@@ -23,33 +26,39 @@ export function MenuItemCard({ item, onPress, onAdd }: MenuItemCardProps) {
         {
           backgroundColor: colors.surface,
           borderRadius: radii.lg,
-          marginHorizontal: spacing.lg,
+          marginHorizontal: isGrid ? 0 : spacing.lg,
           marginBottom: spacing.md,
         },
+        style,
       ]}
     >
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`View details for ${item.name}, ${currency}${item.price}`}
         onPress={onPress}
-        style={({ pressed }) => [styles.infoRow, { opacity: pressed ? 0.85 : 1 }]}
+        style={({ pressed }) => [
+          isGrid ? styles.infoColumn : styles.infoRow,
+          { opacity: pressed ? 0.85 : 1, paddingRight: isGrid ? 0 : 40 },
+        ]}
       >
         <Image
           source={{ uri: item.image }}
-          style={[styles.image, { borderRadius: radii.md }]}
+          style={isGrid ? [styles.gridImage, { borderRadius: radii.md }] : [styles.image, { borderRadius: radii.md }]}
           contentFit="cover"
           transition={200}
           accessibilityLabel={`Photo of ${item.name}`}
         />
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, paddingRight: isGrid ? 40 : 0 }}>
           <View style={styles.headerRow}>
             <Text style={[type.h3, { color: colors.text, flex: 1 }]} numberOfLines={1}>
               {item.name}
             </Text>
-            <Text style={[type.price, { color: colors.primary }]}>
-              {currency}
-              {item.price}
-            </Text>
+            {isGrid ? null : (
+              <Text style={[type.price, { color: colors.primary }]}>
+                {currency}
+                {item.price}
+              </Text>
+            )}
           </View>
           <Text
             style={{ fontFamily: fontFamily.body, fontSize: 13, color: colors.textMuted, lineHeight: 18 }}
@@ -57,6 +66,12 @@ export function MenuItemCard({ item, onPress, onAdd }: MenuItemCardProps) {
           >
             {item.description}
           </Text>
+          {isGrid ? (
+            <Text style={[type.price, { color: colors.primary, marginTop: 8 }]}>
+              {currency}
+              {item.price}
+            </Text>
+          ) : null}
           {item.tags?.length ? (
             <View style={styles.tags}>
               {item.tags.slice(0, 2).map((tag) => (
@@ -86,11 +101,19 @@ const styles = StyleSheet.create({
   infoRow: {
     flexDirection: "row",
     gap: 12,
-    paddingRight: 40,
+  },
+  infoColumn: {
+    flexDirection: "column",
+    gap: 10,
   },
   image: {
     width: 88,
     height: 88,
+    backgroundColor: "#00000010",
+  },
+  gridImage: {
+    width: "100%",
+    height: 140,
     backgroundColor: "#00000010",
   },
   headerRow: {

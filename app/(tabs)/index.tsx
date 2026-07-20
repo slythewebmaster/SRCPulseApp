@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Dimensions, Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@/hooks/useTheme";
@@ -19,6 +19,7 @@ import { menuItems, currency } from "@/data/menu";
 import { promos } from "@/data/promos";
 import { blogPosts } from "@/data/blog";
 import { restaurant } from "@/data/restaurant";
+import { hasSeenWelcome } from "@/lib/onboarding";
 
 const { width: screenWidth } = Dimensions.get("window");
 const HERO_HEIGHT = Math.min(screenWidth * 1.1, 520);
@@ -30,6 +31,18 @@ export default function HomeScreen() {
   const { showToast } = useToast();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const [welcomeCheck, setWelcomeCheck] = useState<"pending" | "seen" | "unseen">("pending");
+
+  useEffect(() => {
+    hasSeenWelcome().then((seen) => setWelcomeCheck(seen ? "seen" : "unseen"));
+  }, []);
+
+  if (welcomeCheck === "pending") {
+    return <View style={{ flex: 1, backgroundColor: colors.background }} />;
+  }
+  if (welcomeCheck === "unseen") {
+    return <Redirect href="/welcome" />;
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -83,7 +96,7 @@ export default function HomeScreen() {
                   variant="outline"
                   size="lg"
                   onPress={() => router.push("/(tabs)/menu")}
-                  style={{ borderColor: "#FFFFFF" }}
+                  textColor="#FFFFFF"
                   accessibilityLabel="Order now, browse the menu"
                 />
               </View>

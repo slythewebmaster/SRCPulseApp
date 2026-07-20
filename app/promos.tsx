@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/hooks/useTheme";
 import { ScreenHeader } from "@/components/ui/ScreenHeader";
 import { Button } from "@/components/ui/Button";
+import { ResponsiveContainer } from "@/components/ui/ResponsiveContainer";
 import { promos } from "@/data/promos";
 
 export default function PromosScreen() {
@@ -17,6 +18,7 @@ export default function PromosScreen() {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScreenHeader title="Promotions" />
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+        <ResponsiveContainer maxWidth={800}>
         <Text
           style={{
             fontFamily: fontFamily.body,
@@ -86,6 +88,7 @@ export default function PromosScreen() {
             </View>
           );
         })}
+        </ResponsiveContainer>
       </ScrollView>
     </View>
   );

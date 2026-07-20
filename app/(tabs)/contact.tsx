@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { FormField } from "@/components/ui/FormField";
 import { RatingStars } from "@/components/ui/RatingStars";
 import { BosphorusLogo } from "@/components/BosphorusLogo";
+import { ResponsiveContainer } from "@/components/ui/ResponsiveContainer";
 import { restaurant } from "@/data/restaurant";
 
 const TOPICS = ["General inquiry", "Order issue", "Reservation", "Feedback"] as const;
@@ -54,6 +55,7 @@ export default function ContactScreen() {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={{ flex: 1, backgroundColor: colors.background }}>
         <ScrollView contentContainerStyle={{ paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
+          <ResponsiveContainer maxWidth={700}>
           <View style={{ paddingTop: insets.top + 12, paddingHorizontal: spacing.lg, paddingBottom: spacing.md }}>
             <Text style={{ fontFamily: fontFamily.bodySemiBold, fontSize: 12, color: colors.secondary, letterSpacing: 1.5 }}>
               GET IN TOUCH
@@ -184,6 +186,7 @@ export default function ContactScreen() {
               </View>
             ) : null}
           </View>
+          </ResponsiveContainer>
         </ScrollView>
       </View>
     </KeyboardAvoidingView>
