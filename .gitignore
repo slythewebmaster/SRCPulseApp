@@ -35,4 +35,7 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# python (design skill scripts)
+__pycache__/
+
 app-example
